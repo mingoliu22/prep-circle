@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-sonner';
@@ -181,16 +180,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Logout function
   const logout = async () => {
     try {
+      console.log("Attempting to logout...");
+      
       const { error } = await supabase.auth.signOut();
       
       if (error) {
+        console.error("Logout error:", error);
         throw error;
       }
       
+      // Clear local state
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+      
       toast.success('Logged out successfully');
       navigate('/login');
+      console.log("Logout successful, user state cleared");
+      
+      return true;
     } catch (error: any) {
-      toast.error(error.message || 'Logout failed');
+      console.error("Logout failed with error:", error);
+      toast.error(error?.message || 'Logout failed');
+      throw error;
     }
   };
   

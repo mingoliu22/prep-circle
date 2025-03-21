@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -78,6 +77,7 @@ const Dashboard = () => {
   const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
   const [upcomingInterviews, setUpcomingInterviews] = useState<Interview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   const displayName = profile?.full_name || user?.user_metadata?.full_name || 'User';
   const firstName = displayName.split(' ')[0];
@@ -146,8 +146,16 @@ const Dashboard = () => {
   };
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/login');
+    try {
+      setIsLoggingOut(true);
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Failed to logout. Please try again.');
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   const handleScheduleInterview = () => {
@@ -184,9 +192,14 @@ const Dashboard = () => {
                 Schedule Interview
               </Button>
             )}
-            <Button variant="outline" className="w-full sm:w-auto" onClick={handleLogout}>
+            <Button 
+              variant="outline" 
+              className="w-full sm:w-auto" 
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+            >
               <LogOut className="h-4 w-4 mr-2" />
-              Logout
+              {isLoggingOut ? 'Logging out...' : 'Logout'}
             </Button>
           </div>
         </div>
