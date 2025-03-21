@@ -28,31 +28,37 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+// Update the slot interface to match our database
+interface InterviewSlot {
+  id: string;
+  start_time: string;
+  end_time: string;
+  location: string | null;
+  meeting_link: string | null;
+}
+
+// Update the question interface to match our database
+interface InterviewQuestion {
+  id: string;
+  question: {
+    id: string;
+    title: string;
+    content: string;
+    difficulty: string | null;
+    category: {
+      name: string;
+    } | null;
+  };
+}
+
 interface Interview {
   id: string;
   title: string;
   description: string | null;
   status: string;
   created_at: string;
-  slots: {
-    id: string;
-    start_time: string;
-    end_time: string;
-    location: string | null;
-    meeting_link: string | null;
-  }[];
-  questions: {
-    id: string;
-    question: {
-      id: string;
-      title: string;
-      content: string;
-      difficulty: string | null;
-      category: {
-        name: string;
-      } | null;
-    };
-  }[];
+  slots: InterviewSlot[];
+  questions: InterviewQuestion[];
 }
 
 const CandidateInterviews = () => {
@@ -109,7 +115,15 @@ const CandidateInterviews = () => {
         throw error;
       }
 
-      return data.map(item => item.interview) as Interview[];
+      // Handle potential database relation errors with default empty arrays
+      return data.map(item => {
+        const interview = item.interview as any;
+        return {
+          ...interview,
+          slots: Array.isArray(interview.slots) ? interview.slots : [],
+          questions: Array.isArray(interview.questions) ? interview.questions : []
+        } as Interview;
+      });
     },
     enabled: !!user,
   });

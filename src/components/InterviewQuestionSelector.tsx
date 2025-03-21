@@ -188,8 +188,19 @@ const InterviewQuestionSelector = ({ interviewId }: InterviewQuestionSelectorPro
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="mb-4"
-              prefix={<Search className="h-4 w-4 text-muted-foreground" />}
+              // Fix for Type 'Element' is not assignable to type 'string'
+              // Remove the prefix prop and its element value
+              // prefix={<Search className="h-4 w-4 text-muted-foreground" />}
             />
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input 
+                placeholder="Search questions..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
             <Separator className="my-4" />
             
             {isLoadingQuestions || isLoadingAssigned ? (

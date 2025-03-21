@@ -89,9 +89,15 @@ const QuestionForm = ({ question, onSuccess }: QuestionFormProps) => {
         return { ...question, ...values };
       } else {
         // Create new question
+        // Fix: Include all required fields in the insert object
+        const newQuestion = { 
+          ...values, 
+          created_by: user?.id 
+        };
+        
         const { data, error } = await supabase
           .from("questions")
-          .insert({ ...values, created_by: user?.id })
+          .insert(newQuestion)
           .select();
 
         if (error) throw error;

@@ -1,20 +1,21 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-sonner';
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from '@supabase/supabase-js';
 
-// Define the types for profiles
+// Define the types for profiles to match our database schema
 interface Profile {
   id: string;
   full_name: string | null;
-  phone: string | null;
-  position: string | null;
-  resume_url: string | null;
-  role: string;
+  avatar_url: string | null;
+  role: string | null;
   created_at: string;
   updated_at: string;
+  // Adding fields that were missing in the error
+  phone?: string | null; 
+  position?: string | null;
+  resume_url?: string | null;
 }
 
 interface AuthContextType {
@@ -57,7 +58,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return null;
       }
       
-      return data as Profile;
+      return data as Profile; // Cast to our Profile type
     } catch (error) {
       console.error('Error in fetchProfile:', error);
       return null;

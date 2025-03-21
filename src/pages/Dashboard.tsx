@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -90,8 +91,8 @@ const Dashboard = () => {
         
         const { data: interviews, error: interviewsError } = await supabase
           .from('interviews')
-          .select('id, title, description, date, type, status')
-          .order('date', { ascending: true })
+          .select('id, title, description, created_at, status')
+          .order('created_at', { ascending: false })
           .limit(5);
           
         if (interviewsError) {
@@ -103,8 +104,8 @@ const Dashboard = () => {
             id: interview.id,
             title: interview.title,
             position: interview.description || 'Not specified',
-            date: interview.date,
-            type: interview.type,
+            date: interview.created_at, // Using created_at instead of date
+            type: 'Standard', // Adding a default type
             interviewer: 'Assigned Interviewer'
           }));
           
@@ -113,9 +114,9 @@ const Dashboard = () => {
           const activities = interviews.map((interview, index) => ({
             id: interview.id,
             type: 'interview' as const,
-            title: `${interview.type.charAt(0).toUpperCase() + interview.type.slice(1)} Interview ${interview.status === 'completed' ? 'Completed' : 'Scheduled'}`,
-            time: new Date(interview.date) > new Date() 
-              ? `Upcoming on ${new Date(interview.date).toLocaleDateString()}`
+            title: `${'Standard'} Interview ${interview.status === 'completed' ? 'Completed' : 'Scheduled'}`,
+            time: new Date(interview.created_at) > new Date() 
+              ? `Upcoming on ${new Date(interview.created_at).toLocaleDateString()}`
               : `${index} days ago`,
             status: interview.status === 'completed' 
               ? 'completed' as const 
