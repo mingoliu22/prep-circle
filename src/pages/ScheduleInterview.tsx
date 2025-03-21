@@ -47,7 +47,10 @@ const ScheduleInterview = () => {
         })
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error creating interview:", error);
+        throw error;
+      }
       return data[0];
     },
     onSuccess: (data) => {
