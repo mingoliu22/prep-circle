@@ -158,6 +158,10 @@ const Dashboard = () => {
     return <Navigate to="/login" replace />;
   }
   
+  // For debugging
+  console.log("User role:", profile?.role);
+  console.log("Is admin:", isAdmin);
+  
   return (
     <div className="container max-w-7xl mx-auto py-8 px-4 md:px-6">
       <div className="space-y-6">

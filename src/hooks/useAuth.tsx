@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-sonner';
@@ -47,6 +48,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Fetch user profile data
   const fetchProfile = async (userId: string) => {
     try {
+      console.log("Fetching profile for user ID:", userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -58,6 +60,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return null;
       }
       
+      console.log("Profile data:", data);
       return data as Profile; // Cast to our Profile type
     } catch (error) {
       console.error('Error in fetchProfile:', error);
@@ -264,9 +267,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Check if user is authenticated
   const isAuthenticated = !!user;
   
-  // Check user roles
+  // Check user roles - explicitly log the role value for debugging
   const isAdmin = profile?.role === 'admin';
   const isCandidate = profile?.role === 'candidate';
+  
+  console.log("Profile role:", profile?.role);
+  console.log("Is admin check:", isAdmin);
   
   const value = {
     user,
