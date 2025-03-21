@@ -9,7 +9,281 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      interview_feedback: {
+        Row: {
+          comments: string | null
+          created_at: string
+          evaluator_id: string
+          id: string
+          interview_id: string
+          rating: number | null
+          updated_at: string
+        }
+        Insert: {
+          comments?: string | null
+          created_at?: string
+          evaluator_id: string
+          id?: string
+          interview_id: string
+          rating?: number | null
+          updated_at?: string
+        }
+        Update: {
+          comments?: string | null
+          created_at?: string
+          evaluator_id?: string
+          id?: string
+          interview_id?: string
+          rating?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_feedback_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "interviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_participants: {
+        Row: {
+          created_at: string
+          id: string
+          interview_id: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interview_id: string
+          role: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interview_id?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_participants_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "interviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_questions: {
+        Row: {
+          created_at: string
+          id: string
+          interview_id: string | null
+          question_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interview_id?: string | null
+          question_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interview_id?: string | null
+          question_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_questions_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "interviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interview_questions_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_slots: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          interview_id: string
+          location: string | null
+          meeting_link: string | null
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          id?: string
+          interview_id: string
+          location?: string | null
+          meeting_link?: string | null
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          interview_id?: string
+          location?: string | null
+          meeting_link?: string | null
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_slots_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "interviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interviews: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          status: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          status?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          status?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      question_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      questions: {
+        Row: {
+          category_id: string | null
+          content: string
+          created_at: string
+          created_by: string | null
+          difficulty: string | null
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          content: string
+          created_at?: string
+          created_by?: string | null
+          difficulty?: string | null
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          difficulty?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "question_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

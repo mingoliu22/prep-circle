@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,6 +17,7 @@ import ProfileSettings from "@/pages/ProfileSettings";
 import NotFound from "@/pages/NotFound";
 import ScheduleInterview from "./pages/ScheduleInterview";
 import CandidateInterviews from "./pages/CandidateInterviews";
+import QuestionBank from "./pages/QuestionBank";
 
 // Create Query Client
 const queryClient = new QueryClient();
@@ -37,6 +39,7 @@ const App = () => (
             <Route path="/settings" element={<ProfileSettings />} />
             <Route path="/interviews/new" element={<ScheduleInterview />} />
             <Route path="/my-interviews" element={<CandidateInterviews />} />
+            <Route path="/question-bank" element={<QuestionBank />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

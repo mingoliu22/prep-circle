@@ -1,149 +1,257 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import MainLayout from '@/components/layout/MainLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "@/hooks/use-sonner";
 import { supabase } from "@/integrations/supabase/client";
-import InterviewCard, { Interview } from '@/components/ui/interview/InterviewCard';
-import { toast } from '@/hooks/use-sonner';
-import { Calendar, User } from 'lucide-react';
+import { useAuth } from "@/hooks/useAuth";
+import { Calendar, Clock, FileText } from "lucide-react";
+import { formatDate, formatTime } from "@/lib/utils";
+
+import MainLayout from "@/components/layout/MainLayout";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+interface Interview {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  created_at: string;
+  slots: {
+    id: string;
+    start_time: string;
+    end_time: string;
+    location: string | null;
+    meeting_link: string | null;
+  }[];
+  questions: {
+    id: string;
+    question: {
+      id: string;
+      title: string;
+      content: string;
+      difficulty: string | null;
+      category: {
+        name: string;
+      } | null;
+    };
+  }[];
+}
 
 const CandidateInterviews = () => {
-  const { user, profile, isLoading: isAuthLoading } = useAuth();
   const navigate = useNavigate();
+  const { user, isAuthenticated, isCandidate } = useAuth();
+  const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
   
-  const [interviews, setInterviews] = useState<Interview[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  useEffect(() => {
-    // If not logged in, redirect to login page
-    if (!isAuthLoading && !user) {
-      navigate('/login');
+  // Redirect if not authenticated or not a candidate
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login");
       return;
     }
     
-    const fetchInterviews = async () => {
-      if (!user) return;
+    if (!isCandidate) {
+      navigate("/dashboard");
+      toast.error("This page is only for candidates");
+    }
+  }, [isAuthenticated, isCandidate, navigate]);
+
+  // Fetch interviews
+  const { data: interviews = [], isLoading } = useQuery({
+    queryKey: ["candidateInterviews", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
       
-      setIsLoading(true);
-      try {
-        // Get interviews where the current user is the candidate
-        const { data, error } = await supabase
-          .from('interviews')
-          .select(`
-            id,
-            title,
-            description,
-            date,
-            duration,
-            type,
-            status,
-            meeting_link,
-            notes,
-            profiles!interviews_interviewer_id_fkey(id, full_name)
-          `)
-          .eq('candidate_id', user.id)
-          .order('date', { ascending: true });
-          
-        if (error) throw error;
-        
-        // Transform data to match our Interview interface
-        const formattedInterviews: Interview[] = (data || []).map(interview => ({
-          id: interview.id,
-          candidateId: user.id,
-          candidateName: profile?.full_name || 'Unknown',
-          position: profile?.position || '',
-          date: new Date(interview.date),
-          duration: interview.duration,
-          status: interview.status as Interview['status'],
-          interviewers: interview.profiles ? [interview.profiles.full_name] : [],
-          type: interview.type as Interview['type'],
-          feedbackSubmitted: false, // We could check this with another query in a real app
-          notes: interview.notes
-        }));
-        
-        setInterviews(formattedInterviews);
-      } catch (error: any) {
-        console.error('Error fetching interviews:', error);
-        toast.error('Failed to load interviews');
-      } finally {
-        setIsLoading(false);
+      const { data, error } = await supabase
+        .from("interview_participants")
+        .select(`
+          interview:interview_id(
+            id, 
+            title, 
+            description, 
+            status, 
+            created_at,
+            slots:interview_slots(id, start_time, end_time, location, meeting_link),
+            questions:interview_questions(
+              id,
+              question:question_id(
+                id, 
+                title, 
+                content, 
+                difficulty, 
+                category:category_id(name)
+              )
+            )
+          )
+        `)
+        .eq("user_id", user.id)
+        .eq("role", "candidate");
+
+      if (error) {
+        toast.error("Failed to load interviews");
+        throw error;
       }
-    };
-    
-    fetchInterviews();
-  }, [user, profile, isAuthLoading, navigate]);
-  
-  // Split interviews into upcoming and past
-  const now = new Date();
-  const upcomingInterviews = interviews.filter(interview => new Date(interview.date) > now);
-  const pastInterviews = interviews.filter(interview => new Date(interview.date) <= now);
-  
+
+      return data.map(item => item.interview) as Interview[];
+    },
+    enabled: !!user,
+  });
+
+  const getInterviewStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "scheduled":
+        return "bg-blue-100 text-blue-800";
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
   return (
     <MainLayout>
-      <div className="container py-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <h1 className="text-2xl font-bold">My Interviews</h1>
-        </div>
+      <div className="container py-6">
+        <h1 className="text-2xl font-bold mb-6">My Interviews</h1>
         
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <div className="text-center py-8">Loading your interviews...</div>
+        ) : interviews.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-lg text-gray-500">You don't have any interviews scheduled yet.</p>
           </div>
         ) : (
-          <Tabs defaultValue="upcoming" className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
-              <TabsTrigger value="upcoming">
-                Upcoming ({upcomingInterviews.length})
-              </TabsTrigger>
-              <TabsTrigger value="past">
-                Past ({pastInterviews.length})
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="upcoming" className="space-y-6">
-              {upcomingInterviews.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {upcomingInterviews.map(interview => (
-                    <InterviewCard key={interview.id} interview={interview} showNotesPreview={true} />
-                  ))}
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-xl font-medium mb-2">No Upcoming Interviews</h3>
-                    <p className="text-muted-foreground text-center max-w-md">
-                      You don't have any interviews scheduled. When an administrator schedules an interview with you, it will appear here.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="past" className="space-y-6">
-              {pastInterviews.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {pastInterviews.map(interview => (
-                    <InterviewCard key={interview.id} interview={interview} showNotesPreview={true} />
-                  ))}
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <User className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-xl font-medium mb-2">No Past Interviews</h3>
-                    <p className="text-muted-foreground text-center max-w-md">
-                      You haven't participated in any interviews yet. Past interviews will be displayed here after they occur.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-          </Tabs>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {interviews.map((interview) => (
+              <Card key={interview.id} className="overflow-hidden">
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-xl">{interview.title}</CardTitle>
+                    <span 
+                      className={`px-2 py-1 rounded text-xs font-medium ${getInterviewStatusColor(interview.status)}`}
+                    >
+                      {interview.status}
+                    </span>
+                  </div>
+                  <CardDescription>
+                    {formatDate(interview.created_at)}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pb-4">
+                  {interview.description && (
+                    <p className="text-sm text-gray-600 mb-4">{interview.description}</p>
+                  )}
+                  
+                  {interview.slots.length > 0 && (
+                    <div className="space-y-2">
+                      {interview.slots.map((slot) => (
+                        <div key={slot.id} className="flex items-start space-x-2 text-sm">
+                          <div className="flex-shrink-0 mt-0.5">
+                            <Calendar className="h-4 w-4 text-gray-500" />
+                          </div>
+                          <div>
+                            <div>{formatDate(slot.start_time)}</div>
+                            <div className="flex items-center text-gray-500">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
+                            </div>
+                            {slot.location && (
+                              <div className="text-gray-500 mt-1">Location: {slot.location}</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+                <Separator />
+                <CardFooter className="pt-4">
+                  <div className="w-full flex justify-between items-center">
+                    <div className="text-sm text-gray-500">
+                      <span className="font-medium">{interview.questions.length}</span> questions
+                    </div>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedInterview(interview)}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          View Questions
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>{selectedInterview?.title}</DialogTitle>
+                          <DialogDescription>
+                            Review the questions for this interview
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="max-h-[60vh] overflow-y-auto py-4">
+                          {selectedInterview?.questions.length === 0 ? (
+                            <p className="text-center text-gray-500 py-4">
+                              No questions have been added to this interview yet.
+                            </p>
+                          ) : (
+                            <div className="space-y-6">
+                              {selectedInterview?.questions.map((item, index) => (
+                                <div key={item.id} className="space-y-2">
+                                  <h3 className="text-lg font-medium flex items-start">
+                                    <span className="bg-primary/10 text-primary rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">
+                                      {index + 1}
+                                    </span>
+                                    {item.question.title}
+                                  </h3>
+                                  <div className="ml-8">
+                                    <p className="text-gray-700">{item.question.content}</p>
+                                    <div className="flex mt-2 space-x-2">
+                                      {item.question.category && (
+                                        <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+                                          {item.question.category.name}
+                                        </span>
+                                      )}
+                                      {item.question.difficulty && (
+                                        <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+                                          {item.question.difficulty.charAt(0).toUpperCase() + 
+                                            item.question.difficulty.slice(1)}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {index < (selectedInterview?.questions.length || 0) - 1 && (
+                                    <Separator className="mt-4" />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
         )}
       </div>
     </MainLayout>
