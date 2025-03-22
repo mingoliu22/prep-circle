@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import InterviewCard, { Interview } from '@/components/ui/interview/InterviewCard';
 import { getInitials, formatDate } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuth';
 import { 
   ChevronLeft, 
   Mail, 
