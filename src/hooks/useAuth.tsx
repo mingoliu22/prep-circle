@@ -177,8 +177,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
   
-  // Logout function
-  const logout = async () => {
+  // Logout function - update to match the interface return type
+  const logout = async (): Promise<void> => {
     try {
       console.log("Attempting to logout...");
       
@@ -197,8 +197,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       toast.success('Logged out successfully');
       navigate('/login');
       console.log("Logout successful, user state cleared");
-      
-      return true;
     } catch (error: any) {
       console.error("Logout failed with error:", error);
       toast.error(error?.message || 'Logout failed');
