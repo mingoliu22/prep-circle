@@ -39,12 +39,16 @@ const ScheduleInterview = () => {
     mutationFn: async () => {
       console.log("Creating interview with user ID:", user?.id);
       
+      if (!user?.id) {
+        throw new Error("User ID is required to create an interview");
+      }
+      
       const { data, error } = await supabase
         .from("interviews")
         .insert({
           title,
           description,
-          user_id: user?.id,
+          user_id: user.id,
           status: "scheduled"
         })
         .select();
@@ -55,6 +59,11 @@ const ScheduleInterview = () => {
       }
       
       console.log("Interview created successfully:", data);
+      
+      if (!data || data.length === 0) {
+        throw new Error("No data returned from interview creation");
+      }
+      
       return data[0];
     },
     onSuccess: (data) => {
@@ -64,7 +73,7 @@ const ScheduleInterview = () => {
     },
     onError: (error) => {
       console.error("Error creating interview:", error);
-      toast.error("Failed to create interview");
+      toast.error(`Failed to create interview: ${error instanceof Error ? error.message : 'Unknown error'}`);
     },
   });
 
@@ -74,6 +83,12 @@ const ScheduleInterview = () => {
       toast.error("Please enter an interview title");
       return;
     }
+    
+    if (!user?.id) {
+      toast.error("You must be logged in to create an interview");
+      return;
+    }
+    
     createInterview.mutate();
   };
 
@@ -129,7 +144,11 @@ const ScheduleInterview = () => {
             </div>
             
             <div className="pt-4">
-              <Button type="submit" disabled={createInterview.isPending}>
+              <Button 
+                type="submit" 
+                disabled={createInterview.isPending || !title.trim()}
+                className="bg-primary hover:bg-primary/90"
+              >
                 {createInterview.isPending ? "Creating..." : "Continue to Questions"}
               </Button>
             </div>
@@ -149,7 +168,7 @@ const ScheduleInterview = () => {
             <InterviewQuestionSelector interviewId={interviewId} />
             
             <div className="pt-4">
-              <Button onClick={handleFinish}>
+              <Button onClick={handleFinish} className="bg-primary hover:bg-primary/90">
                 Finish Setup
               </Button>
             </div>
