@@ -15,20 +15,30 @@ import InterviewQuestionSelector from "@/components/InterviewQuestionSelector";
 
 const ScheduleInterview = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isAdmin } = useAuth();
+  const { user, isAuthenticated, isAdmin, profile } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [interviewId, setInterviewId] = useState<string | null>(null);
   const [step, setStep] = useState(1);
   
+  // Debug logs to troubleshoot authentication and admin status
+  useEffect(() => {
+    console.log("Auth Debug - user:", user);
+    console.log("Auth Debug - isAuthenticated:", isAuthenticated);
+    console.log("Auth Debug - isAdmin:", isAdmin);
+    console.log("Auth Debug - profile:", profile);
+  }, [user, isAuthenticated, isAdmin, profile]);
+  
   // Redirect if not authenticated or not an admin
   useEffect(() => {
     if (!isAuthenticated) {
+      console.log("User not authenticated, redirecting to login");
       navigate("/login");
       return;
     }
     
     if (!isAdmin) {
+      console.log("User is not an admin, redirecting to dashboard");
       navigate("/dashboard");
       toast.error("Only administrators can schedule interviews");
     }
@@ -40,9 +50,11 @@ const ScheduleInterview = () => {
       console.log("Creating interview with user ID:", user?.id);
       
       if (!user?.id) {
+        console.error("No user ID available for creating interview");
         throw new Error("User ID is required to create an interview");
       }
       
+      // Create new interview
       const { data, error } = await supabase
         .from("interviews")
         .insert({
@@ -54,19 +66,21 @@ const ScheduleInterview = () => {
         .select();
 
       if (error) {
-        console.error("Error creating interview:", error);
+        console.error("Supabase error creating interview:", error);
         throw error;
       }
       
-      console.log("Interview created successfully:", data);
+      console.log("Interview created successfully, raw response:", data);
       
       if (!data || data.length === 0) {
+        console.error("No data returned from interview creation");
         throw new Error("No data returned from interview creation");
       }
       
       return data[0];
     },
     onSuccess: (data) => {
+      console.log("Interview created successfully with ID:", data.id);
       toast.success("Interview created successfully");
       setInterviewId(data.id);
       setStep(2);
@@ -79,6 +93,11 @@ const ScheduleInterview = () => {
 
   const handleCreateInterview = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log("Attempting to create interview");
+    console.log("Current title:", title);
+    console.log("Current user ID:", user?.id);
+    
     if (!title.trim()) {
       toast.error("Please enter an interview title");
       return;
@@ -86,6 +105,11 @@ const ScheduleInterview = () => {
     
     if (!user?.id) {
       toast.error("You must be logged in to create an interview");
+      return;
+    }
+    
+    if (!isAdmin) {
+      toast.error("Only administrators can create interviews");
       return;
     }
     
