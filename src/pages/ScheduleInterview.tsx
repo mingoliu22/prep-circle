@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-sonner";
@@ -21,7 +22,7 @@ const ScheduleInterview = () => {
   const [step, setStep] = useState(1);
   
   // Redirect if not authenticated or not an admin
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isAuthenticated) {
       navigate("/login");
       return;
@@ -36,6 +37,8 @@ const ScheduleInterview = () => {
   // Create interview mutation
   const createInterview = useMutation({
     mutationFn: async () => {
+      console.log("Creating interview with user ID:", user?.id);
+      
       const { data, error } = await supabase
         .from("interviews")
         .insert({
@@ -50,6 +53,8 @@ const ScheduleInterview = () => {
         console.error("Error creating interview:", error);
         throw error;
       }
+      
+      console.log("Interview created successfully:", data);
       return data[0];
     },
     onSuccess: (data) => {
@@ -73,6 +78,7 @@ const ScheduleInterview = () => {
   };
 
   const handleFinish = () => {
+    toast.success("Interview setup completed!");
     navigate("/dashboard");
   };
 

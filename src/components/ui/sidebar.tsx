@@ -1,8 +1,8 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   Users, ChevronDown, Home, Settings, Calendar, User2, 
-  Menu, X, LogOut, HelpCircle, FileText 
+  Menu, X, LogOut, HelpCircle, FileText, PlusCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -12,6 +12,7 @@ import useAuth from "@/hooks/useAuth";
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isMobile = useIsMobile(); // Changed from useMobile to useIsMobile
   const { logout, isAdmin, isCandidate } = useAuth();
   const [open, setOpen] = React.useState(false);
@@ -19,7 +20,6 @@ export function Sidebar() {
   const adminLinks = [
     { title: "Dashboard", href: "/dashboard", icon: Home },
     { title: "Candidates", href: "/candidates", icon: Users },
-    { title: "Schedule Interview", href: "/interviews/new", icon: Calendar },
     { title: "Question Bank", href: "/question-bank", icon: FileText },
     { title: "Settings", href: "/settings", icon: Settings },
   ];
@@ -35,6 +35,11 @@ export function Sidebar() {
   const isActive = (path: string) => {
     return location.pathname === path;
   };
+  
+  const handleScheduleInterview = () => {
+    navigate('/interviews/new');
+    setOpen(false);
+  };
 
   const SidebarContent = () => (
     <div className="h-full flex flex-col">
@@ -42,6 +47,19 @@ export function Sidebar() {
         <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
           {isAdmin ? "Admin Dashboard" : "Candidate Portal"}
         </h2>
+        
+        {isAdmin && (
+          <div className="mb-4 px-4">
+            <Button 
+              className="w-full justify-start" 
+              onClick={handleScheduleInterview}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Schedule Interview
+            </Button>
+          </div>
+        )}
+        
         <div className="space-y-1">
           {links.map((link) => {
             const Icon = link.icon;
