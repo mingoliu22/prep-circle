@@ -71,6 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        console.log("Auth state changed:", event, !!currentSession);
         setIsLoading(true);
         
         if (currentSession) {
@@ -82,6 +83,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setProfile(profileData);
           }
         } else {
+          // Make sure we clear the state when session is null
           setUser(null);
           setProfile(null);
           setSession(null);
@@ -177,10 +179,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
   
-  // Logout function - update to match the interface return type
+  // Logout function - fixed to properly handle the logout process
   const logout = async (): Promise<void> => {
     try {
       console.log("Attempting to logout...");
+      setIsLoading(true);
       
       const { error } = await supabase.auth.signOut();
       
@@ -189,18 +192,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw error;
       }
       
-      // Clear local state
+      // Explicitly clear local state
       setUser(null);
       setProfile(null);
       setSession(null);
       
-      toast.success('Logged out successfully');
-      navigate('/login');
       console.log("Logout successful, user state cleared");
+      
+      // Navigate first, then show success toast
+      navigate('/login');
+      toast.success('Logged out successfully');
     } catch (error: any) {
       console.error("Logout failed with error:", error);
       toast.error(error?.message || 'Logout failed');
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
   

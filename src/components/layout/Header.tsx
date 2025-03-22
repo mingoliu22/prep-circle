@@ -40,14 +40,17 @@ const Header: React.FC = () => {
     return location.pathname === path;
   };
 
-  // Handle logout with error handling
+  // Handle logout with improved error handling
   const handleLogout = async () => {
+    if (isLoggingOut) return; // Prevent multiple clicks
+    
     try {
       setIsLoggingOut(true);
+      console.log("Header: Calling logout function");
       await logout();
-      navigate('/login');
+      // Navigation is now handled in the useAuth hook
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Header logout error:', error);
       toast.error('Failed to logout. Please try again.');
     } finally {
       setIsLoggingOut(false);
