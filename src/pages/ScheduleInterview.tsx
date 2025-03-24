@@ -83,7 +83,7 @@ const ScheduleInterview = () => {
     },
     onError: (error) => {
       console.error("Error creating interview:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to create interview: Unknown error");
+      toast.error(error instanceof Error ? error.message : "Failed to create interview");
     },
   });
 
