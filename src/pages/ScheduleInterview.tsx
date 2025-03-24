@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-sonner";
 import { supabase } from "@/integrations/supabase/client";
-import useAuth from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth";
 
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";

@@ -31,7 +31,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           
           const profileData = await fetchProfile(currentSession.user.id);
           if (profileData) {
+            console.log("Fetched profile data:", profileData);
             setProfile(profileData);
+          } else {
+            console.log("No profile data found for user");
           }
         } else {
           // Make sure we clear the state when session is null
@@ -54,7 +57,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         const profileData = await fetchProfile(initialSession.user.id);
         if (profileData) {
+          console.log("Fetched initial profile data:", profileData);
           setProfile(profileData);
+        } else {
+          console.log("No initial profile data found for user");
         }
       }
       
