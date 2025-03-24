@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/auth';
@@ -99,12 +98,6 @@ const Header: React.FC = () => {
                 <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>
                   Home
                 </Link>
-                <Link to="/features" className={`nav-link ${isActive('/features') ? 'active' : ''}`}>
-                  Features
-                </Link>
-                <Link to="/about" className={`nav-link ${isActive('/about') ? 'active' : ''}`}>
-                  About
-                </Link>
               </>
             )}
           </nav>
@@ -200,12 +193,6 @@ const Header: React.FC = () => {
               <nav className="flex flex-col space-y-3 pb-3">
                 <Link to="/" className={`p-2 rounded-md ${isActive('/') ? 'bg-muted font-medium' : ''}`}>
                   Home
-                </Link>
-                <Link to="/features" className={`p-2 rounded-md ${isActive('/features') ? 'bg-muted font-medium' : ''}`}>
-                  Features
-                </Link>
-                <Link to="/about" className={`p-2 rounded-md ${isActive('/about') ? 'bg-muted font-medium' : ''}`}>
-                  About
                 </Link>
               </nav>
             )}
