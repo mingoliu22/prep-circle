@@ -7,8 +7,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { useIsMobile } from "@/hooks/use-mobile"; // Changed from useMobile to useIsMobile
-import useAuth from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/hooks/useAuth";
 
 export function Sidebar() {
   const location = useLocation();

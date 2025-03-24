@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/auth";
+import { useAuth } from "@/hooks/useAuth";
 
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -51,29 +51,34 @@ const ScheduleInterview = () => {
       console.log("User ID:", user.id);
       console.log("User admin status:", isAdmin);
       
-      // Create new interview
-      const { data, error } = await supabase
-        .from("interviews")
-        .insert({
-          title,
-          description,
-          user_id: user.id,
-          status: "scheduled"
-        })
-        .select();
+      try {
+        // Create new interview
+        const { data, error } = await supabase
+          .from("interviews")
+          .insert({
+            title,
+            description,
+            user_id: user.id,
+            status: "scheduled"
+          })
+          .select();
 
-      if (error) {
-        console.error("Supabase error creating interview:", error);
-        throw new Error(`Failed to create interview: ${error.message}`);
+        if (error) {
+          console.error("Supabase error creating interview:", error);
+          throw new Error(`Failed to create interview: ${error.message}`);
+        }
+        
+        console.log("Interview created successfully:", data);
+        
+        if (!data || data.length === 0) {
+          throw new Error("No data returned from interview creation");
+        }
+        
+        return data[0];
+      } catch (error) {
+        console.error("Error in createInterview:", error);
+        throw error;
       }
-      
-      console.log("Interview created successfully:", data);
-      
-      if (!data || data.length === 0) {
-        throw new Error("No data returned from interview creation");
-      }
-      
-      return data[0];
     },
     onSuccess: (data) => {
       console.log("Interview created successfully with ID:", data.id);
