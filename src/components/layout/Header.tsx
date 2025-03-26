@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/auth/useAuth'; // Direct import from the source
+import { useAuth } from '@/hooks/auth'; 
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
@@ -49,7 +49,7 @@ const Header: React.FC = () => {
       setIsLoggingOut(true);
       console.log("Header: Calling logout function");
       await logout();
-      // Navigation is now handled in the useAuth hook
+      // Note: Navigation is now handled in the AuthProvider
     } catch (error) {
       console.error('Header logout error:', error);
       toast.error('Failed to logout. Please try again.');

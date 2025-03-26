@@ -5,4 +5,4 @@ export * from './useAuth';
 export * from './authUtils';
 
 // Default export for backward compatibility
-export { default } from './useAuth';
+export { useAuth } from './useAuth';

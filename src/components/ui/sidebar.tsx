@@ -9,12 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useAuth } from "@/hooks/auth/useAuth"; // Direct import from the source
+import { useAuth } from "@/hooks/auth"; 
 
 export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const isMobile = useIsMobile(); // Changed from useMobile to useIsMobile
+  const isMobile = useIsMobile(); 
   const { logout, isAdmin, isCandidate } = useAuth();
   const [open, setOpen] = React.useState(false);
 
@@ -99,9 +99,14 @@ export function Sidebar() {
         <Button
           variant="outline"
           className="w-full justify-start"
-          onClick={() => {
+          onClick={async () => {
             setOpen(false);
-            logout();
+            try {
+              await logout();
+              // Navigation is handled in the AuthProvider
+            } catch (error) {
+              console.error("Sidebar logout error:", error);
+            }
           }}
         >
           <LogOut className="mr-2 h-4 w-4" />

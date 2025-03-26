@@ -142,6 +142,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("Attempting to logout...");
       setIsLoading(true);
       
+      // Sign out from Supabase
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -156,7 +157,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       console.log("Logout successful, user state cleared");
       
-      // Navigate first, then show success toast
+      // Navigate to the login page
       navigate('/login');
       toast.success('Logged out successfully');
     } catch (error: any) {
