@@ -1,3 +1,4 @@
+
 // Import necessary components and hooks
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -44,39 +45,84 @@ const ScheduleInterview = () => {
     const interviewData = {
       title: title,
       description: description,
-      candidate_id: user.id, // Assuming the current user is the candidate
-      questions: selectedQuestions,
+      user_id: user.id, // Changed from candidate_id to user_id to match database schema
       status: 'scheduled',
       created_at: new Date().toISOString(),
     };
 
-    // Function to insert the interview data into the database
-    const insertInterview = async () => {
-      const { data, error } = await supabase
-        .from('interviews')
-        .insert([interviewData]);
+    // Call the mutation to insert the interview
+    insertInterviewMutation.mutate();
+  };
 
-      if (error) {
-        throw error;
+  // Function to insert the interview data into the database
+  const insertInterview = async () => {
+    if (!user) throw new Error("User not authenticated");
+
+    const { data: interviewData, error: interviewError } = await supabase
+      .from('interviews')
+      .insert({
+        title: title,
+        description: description,
+        user_id: user.id,
+        status: 'scheduled',
+      });
+
+    if (interviewError) {
+      console.error("Error creating interview:", interviewError);
+      throw interviewError;
+    }
+
+    // Get the newly created interview ID
+    const { data: newInterviews, error: fetchError } = await supabase
+      .from('interviews')
+      .select('id')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (fetchError) {
+      console.error("Error fetching new interview:", fetchError);
+      throw fetchError;
+    }
+
+    if (!newInterviews || newInterviews.length === 0) {
+      throw new Error("Failed to retrieve the created interview");
+    }
+
+    const interviewId = newInterviews[0].id;
+
+    // Add selected questions to the interview
+    if (selectedQuestions.length > 0) {
+      const questionInserts = selectedQuestions.map(questionId => ({
+        interview_id: interviewId,
+        question_id: questionId
+      }));
+
+      const { error: questionsError } = await supabase
+        .from('interview_questions')
+        .insert(questionInserts);
+
+      if (questionsError) {
+        console.error("Error adding questions to interview:", questionsError);
+        throw questionsError;
       }
+    }
 
-      return data;
-    };
-
-    // Use useMutation to handle the asynchronous operation
-    insertInterviewMutation.mutate(undefined, {
-      onSuccess: () => {
-        toast.success("Interview scheduled successfully!");
-        navigate("/dashboard"); // Redirect to the dashboard after successful scheduling
-      },
-      onError: (error: any) => {
-        toast.error(error.message || "Failed to schedule interview.");
-      },
-    });
+    return interviewId;
   };
 
   // useMutation hook for handling the interview scheduling
-  const insertInterviewMutation = useMutation(insertInterview);
+  const insertInterviewMutation = useMutation({
+    mutationFn: insertInterview,
+    onSuccess: (interviewId) => {
+      toast.success("Interview scheduled successfully!");
+      navigate("/dashboard"); // Redirect to the dashboard after successful scheduling
+    },
+    onError: (error: any) => {
+      console.error("Mutation error:", error);
+      toast.error(error.message || "Failed to schedule interview.");
+    },
+  });
 
   return (
     <MainLayout>
@@ -110,11 +156,17 @@ const ScheduleInterview = () => {
 
             <Separator className="my-4" />
 
-            <InterviewQuestionSelector onQuestionsSelected={setSelectedQuestions} />
+            {/* Pass the interviewId prop conditionally */}
+            <InterviewQuestionSelector 
+              interviewId=""  // Initially empty, questions will be added after interview creation
+              onQuestionsSelected={setSelectedQuestions}
+            />
           </CardContent>
           <CardFooter className="flex justify-end">
-            <Button onClick={handleSubmit} disabled={insertInterviewMutation.isLoading}>
-              {insertInterviewMutation.isLoading ? "Scheduling..." : "Schedule Interview"}
+            <Button 
+              onClick={handleSubmit} 
+              disabled={insertInterviewMutation.isPending}>
+              {insertInterviewMutation.isPending ? "Scheduling..." : "Schedule Interview"}
             </Button>
           </CardFooter>
         </Card>

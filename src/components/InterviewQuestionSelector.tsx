@@ -39,12 +39,14 @@ interface Question {
 
 interface InterviewQuestionSelectorProps {
   interviewId: string;
+  onQuestionsSelected?: (questionIds: string[]) => void;
 }
 
-const InterviewQuestionSelector = ({ interviewId }: InterviewQuestionSelectorProps) => {
+const InterviewQuestionSelector = ({ interviewId, onQuestionsSelected }: InterviewQuestionSelectorProps) => {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [tempSelectedQuestions, setTempSelectedQuestions] = useState<string[]>([]);
 
   // Fetch all questions
   const { data: allQuestions = [], isLoading: isLoadingQuestions } = useQuery({
@@ -69,6 +71,9 @@ const InterviewQuestionSelector = ({ interviewId }: InterviewQuestionSelectorPro
   const { data: assignedQuestions = [], isLoading: isLoadingAssigned } = useQuery({
     queryKey: ["interviewQuestions", interviewId],
     queryFn: async () => {
+      // If interviewId is empty, return empty array
+      if (!interviewId) return [] as Question[];
+      
       const { data, error } = await supabase
         .from("interview_questions")
         .select(`
@@ -93,13 +98,17 @@ const InterviewQuestionSelector = ({ interviewId }: InterviewQuestionSelectorPro
   const questions = React.useMemo(() => {
     if (!allQuestions.length) return [];
     
-    const assignedIds = new Set(assignedQuestions.map(q => q.id));
+    // Create a set of assigned question IDs
+    const assignedIds = new Set([
+      ...assignedQuestions.map(q => q.id),
+      ...tempSelectedQuestions
+    ]);
     
     return allQuestions.map(question => ({
       ...question,
       isAssigned: assignedIds.has(question.id)
     }));
-  }, [allQuestions, assignedQuestions]);
+  }, [allQuestions, assignedQuestions, tempSelectedQuestions]);
 
   // Filter questions based on search term
   const filteredQuestions = questions.filter(
@@ -112,6 +121,16 @@ const InterviewQuestionSelector = ({ interviewId }: InterviewQuestionSelectorPro
   // Add question to interview mutation
   const assignQuestion = useMutation({
     mutationFn: async (questionId: string) => {
+      // For new interviews being created, just track selections locally
+      if (!interviewId) {
+        setTempSelectedQuestions(prev => [...prev, questionId]);
+        if (onQuestionsSelected) {
+          onQuestionsSelected([...tempSelectedQuestions, questionId]);
+        }
+        return;
+      }
+      
+      // For existing interviews, update the database
       const { error } = await supabase
         .from("interview_questions")
         .insert({
@@ -122,7 +141,9 @@ const InterviewQuestionSelector = ({ interviewId }: InterviewQuestionSelectorPro
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["interviewQuestions", interviewId] });
+      if (interviewId) {
+        queryClient.invalidateQueries({ queryKey: ["interviewQuestions", interviewId] });
+      }
       toast.success("Question added to interview");
     },
     onError: (error) => {
@@ -134,6 +155,16 @@ const InterviewQuestionSelector = ({ interviewId }: InterviewQuestionSelectorPro
   // Remove question from interview mutation
   const removeQuestion = useMutation({
     mutationFn: async (questionId: string) => {
+      // For new interviews being created, just track selections locally
+      if (!interviewId) {
+        setTempSelectedQuestions(prev => prev.filter(id => id !== questionId));
+        if (onQuestionsSelected) {
+          onQuestionsSelected(tempSelectedQuestions.filter(id => id !== questionId));
+        }
+        return;
+      }
+      
+      // For existing interviews, update the database
       const { error } = await supabase
         .from("interview_questions")
         .delete()
@@ -143,7 +174,9 @@ const InterviewQuestionSelector = ({ interviewId }: InterviewQuestionSelectorPro
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["interviewQuestions", interviewId] });
+      if (interviewId) {
+        queryClient.invalidateQueries({ queryKey: ["interviewQuestions", interviewId] });
+      }
       toast.success("Question removed from interview");
     },
     onError: (error) => {
@@ -183,15 +216,6 @@ const InterviewQuestionSelector = ({ interviewId }: InterviewQuestionSelectorPro
             </SheetDescription>
           </SheetHeader>
           <div className="py-4">
-            <Input
-              placeholder="Search questions..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="mb-4"
-              // Fix for Type 'Element' is not assignable to type 'string'
-              // Remove the prefix prop and its element value
-              // prefix={<Search className="h-4 w-4 text-muted-foreground" />}
-            />
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input 
@@ -203,7 +227,7 @@ const InterviewQuestionSelector = ({ interviewId }: InterviewQuestionSelectorPro
             </div>
             <Separator className="my-4" />
             
-            {isLoadingQuestions || isLoadingAssigned ? (
+            {isLoadingQuestions ? (
               <div className="text-center py-8">Loading questions...</div>
             ) : filteredQuestions.length === 0 ? (
               <div className="text-center py-8">
@@ -251,8 +275,45 @@ const InterviewQuestionSelector = ({ interviewId }: InterviewQuestionSelectorPro
       </Sheet>
 
       <div className="mt-4">
-        <h3 className="text-lg font-medium mb-2">Interview Questions</h3>
-        {isLoadingAssigned ? (
+        <h3 className="text-lg font-medium mb-2">Selected Questions</h3>
+        {!interviewId ? (
+          tempSelectedQuestions.length === 0 ? (
+            <div className="text-gray-500 italic">No questions selected yet.</div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Difficulty</TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allQuestions
+                    .filter(q => tempSelectedQuestions.includes(q.id))
+                    .map((question) => (
+                      <TableRow key={question.id}>
+                        <TableCell className="font-medium">{question.title}</TableCell>
+                        <TableCell>{question.category?.name || "Uncategorized"}</TableCell>
+                        <TableCell>{formatDifficulty(question.difficulty)}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeQuestion.mutate(question.id)}
+                          >
+                            Remove
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </div>
+          )
+        ) : isLoadingAssigned ? (
           <div className="text-center py-8">Loading assigned questions...</div>
         ) : assignedQuestions.length === 0 ? (
           <div className="text-gray-500 italic">No questions assigned to this interview yet.</div>
